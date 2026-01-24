@@ -18,6 +18,7 @@
 
 
     <div class="container">
+        <a class="return-link" href="/">← Back to Home</a>
         <section class="general-system">
             <div class="status <%= statusClass %>"></div>
             <div class="info">
@@ -63,23 +64,25 @@
             </div>
         </section>
 
-        <h2 class="section-title">
+        <h2 class="section-title" id="uptime-section-project">
                 Uptime <span class="muted">Last 90 days</span>
         </h2>
-        <section id="projects" class="services">
-            <div class="service-card" data-service="API Gateway"
-                data-description="Main entry point for all microservices.">
-            </div>
-            <div class="service-card" data-service="Main Database"
-                data-description="PostgreSQL cluster handling core application data.">
-            </div>
-            <div class="service-card" data-service="Auth Service"
-                data-description="Identity provider and session management.">
+        <section class="incidents">            
+            <div class="no-incidents">
+                <div class="uptime-bar"></div>
             </div>
         </section>
 
         <h2 class="section-title">
-                Recent Incidents
+                Response Time
+        </h2>
+        <section class="incidents">            
+            <div class="no-incidents">
+                
+            </div>
+        </section>
+        <h2 class="section-title">
+                Recent Events
         </h2>
         <section class="incidents">            
             <div class="no-incidents">

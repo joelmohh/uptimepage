@@ -25,8 +25,22 @@ app.get('/', (req, res) => {
 
     res.render('index', {
         statusMessage: "All Systems Online",
+        statusClass: "online",
         lastUpdated: new Date().toUTCString(),
         projects: projects
+    });
+});
+app.get('/:id', (req, res) => {
+    const project = config.services.find(s => s.id === req.params.id);
+    //if (!project) {
+    //    return res.status(404).send('Service not found');
+    //}
+
+    res.render('project', {
+        statusMessage: `Dashboard is Online`,
+        statusClass: "online",
+        lastUpdated: new Date().toUTCString(),
+        projects: [project]
     });
 });
 
