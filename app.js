@@ -12,8 +12,8 @@ app.set('view engine', 'ejs');
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
-.then(() => console.log('[INFO] Connected to MongoDB'))
-.catch(err => console.error('[ERROR] MongoDB connection error:', err));
+    .then(() => console.log('[INFO] Connected to MongoDB'))
+    .catch(err => console.error('[ERROR] MongoDB connection error:', err));
 
 // Config File
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json')));

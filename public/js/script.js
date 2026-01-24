@@ -1,4 +1,4 @@
-
+// theme toggle
 const themeToggleBtn = document.querySelector('.theme-toggle');
 const currentTheme = localStorage.getItem('theme') || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
 
@@ -51,3 +51,37 @@ document.querySelectorAll('.service-card').forEach(card => {
         barContainer.appendChild(segment);
     }
 });
+
+// menu toggle
+const menuToggle = document.querySelector('.menu-toggle');
+const navContainer = document.querySelector('.nav-container');
+const navLinks = document.querySelectorAll('.links a');
+const navClose = document.querySelector('.nav-close');
+
+if (menuToggle && navContainer) {
+    const closeNav = () => {
+        navContainer.classList.remove('active');
+        menuToggle.classList.remove('open');
+        document.body.classList.remove('nav-open');
+        menuToggle.setAttribute('aria-expanded', 'false');
+    };
+
+    menuToggle.addEventListener('click', () => {
+        const isOpen = navContainer.classList.toggle('active');
+        menuToggle.classList.toggle('open', isOpen);
+        document.body.classList.toggle('nav-open', isOpen);
+        menuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+
+    navLinks.forEach(link => link.addEventListener('click', closeNav));
+
+    if (navClose) {
+        navClose.addEventListener('click', closeNav);
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeNav();
+        }
+    });
+}

@@ -71,13 +71,17 @@ header {
 }
 
 .nav-container {
+    justify-self: end;
     display: contents;
+    align-items: center;
+    gap: 20px;
 }
 
 .links {
-    justify-self: center;
     display: flex;
-    gap: 25px;
+    gap: 22px;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 .links a {
@@ -152,50 +156,95 @@ header {
     .menu-toggle {
         display: flex;
         order: 3;
+        z-index: 1100;
     }
 
     .nav-container {
         position: fixed;
-        inset: 0 -100% 0 0;
-        width: 100%;
-        background-color: var(--nav-mobile-bg);
         display: flex;
+        inset: 0;
+        background-color: var(--nav-mobile-bg);
         flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        gap: 50px;
-        transition: right 0.4s cubic-bezier(0.77, 0, 0.175, 1);
+        justify-content: flex-start;
+        align-items: stretch;
+        width: 100%;
+        gap: 32px;
+        transform: translateX(100%);
+        opacity: 0;
+        pointer-events: none;
+        transition: transform 0.4s cubic-bezier(0.77, 0, 0.175, 1), opacity 0.35s ease;
         z-index: 1050;
+        padding: 96px 28px 72px 28px;
+        min-height: 100vh;
+        overflow-y: auto;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+    }
+
+    .nav-close {
+        position: absolute;
+        top: 18px;
+        right: 18px;
+        background: rgba(0, 0, 0, 0.1);
+        color: var(--text-color);
+        border: 1px solid var(--card-border);
+        border-radius: 50%;
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        font-size: 1.4rem;
+        cursor: pointer;
+        transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .nav-close:active {
+        transform: scale(0.96);
+        background: rgba(0, 0, 0, 0.2);
     }
 
     .nav-container.active {
-        right: 0;
+        transform: translateX(0);
+        opacity: 1;
+        pointer-events: auto;
     }
 
     .links {
         flex-direction: column;
         align-items: center;
-        gap: 30px;
+        gap: 20px;
+        width: 100%;
     }
 
     .links a {
         font-size: 1.8rem;
-        padding: 10px;
+        margin-bottom: 10px;
+        text-align: center;
+        letter-spacing: 0.02em;
+        border-radius: 12px;
+    }
+
+
+    .links a:active {
+        transform: scale(0.98);
     }
 
     .actions {
         flex-direction: row;
         justify-content: center;
         width: 100%;
-        gap: 20px;
+        gap: 12px;
+        position: sticky;
+        bottom: 12px;
+    }
+    .general-system {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 20px;
     }
 
-    .actions button {
-        font-size: 1rem;
-        padding: 12px 24px;
-        background-color: var(--accent);
-        color: #fff;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+    .services {
+        padding: 15px 0 5px 0;
     }
 
     .menu-toggle.open .bar:nth-child(1) {
@@ -227,12 +276,19 @@ header {
     margin-bottom: 40px;
 }
 
-.general-system,
-.services {
+.general-system {
     display: flex;
     align-items: center;
     gap: 20px;
     padding: 25px 35px;
+    flex-wrap: wrap;
+}
+
+.services {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 25px 0;
 }
 
 .service-detail-card,
@@ -281,7 +337,7 @@ header {
     border: 1px solid var(--card-border);
     padding: 20px;
     border-radius: 10px;
-    flex: 1;
+    width: 100%;
 }
 
 .service-card h3 {
