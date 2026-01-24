@@ -328,3 +328,18 @@ body {
     color: var(--my-muted-text);
     padding: 20px 0;
 }
+/*RESPONSE TIME CHART */
+.chart-section {
+    background: var(--my-card-bg);
+    border: 1px solid var(--my-card-border);
+    border-radius: 12px;
+    padding: 30px;
+    margin: 40px 0;
+}
+
+.chart-section canvas {
+    max-height: 400px;
+}
+#responseTimeChart{
+    width: 100% !important;
+}

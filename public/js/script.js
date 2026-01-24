@@ -65,19 +65,28 @@ document.querySelectorAll('.ls').forEach(el => {
 });
 
 
-document.addEventListener('DOMContentLoaded', () => {
-    const uptSection = document.getElementById('uptime-section-project');
-    if (uptSection) {
-        const barContainer2 = uptSection.querySelector('.uptime-bar');
-        for (let i = 0; i < 60; i++) {
-            const segment = document.createElement('span');
-            segment.className = 'segment';
+document.querySelectorAll('.service-cardS').forEach(card => {
 
-            if (Math.random() > 0.98) {
-                segment.classList.add('down');
-            }
+    card.innerHTML = `
+        <div class="uptime-wrapper">
+            <div class="uptime-bar"></div>
+            <div class="uptime-footer">
+                <span>90 days ago</span>
+                <span>100% uptime</span>
+                <span>Today</span>
+            </div>
+        </div>
+    `;
 
-            barContainer2.appendChild(segment);
+    const barContainer = card.querySelector('.uptime-bar');
+    for (let i = 0; i < 60; i++) {
+        const segment = document.createElement('span');
+        segment.className = 'segment';
+
+        if (Math.random() > 0.98) {
+            segment.classList.add('down');
         }
+
+        barContainer.appendChild(segment);
     }
-})
+});

@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>joelmo.dev</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="/css/main.css">
 </head>
 
@@ -29,9 +30,9 @@
                 </p>
             </div>
         </section>
-        
+
         <h2 class="section-title">
-                Overall Uptime
+            Overall Uptime
         </h2>
         <section class="overall">
             <div class="overall-stats">
@@ -65,26 +66,23 @@
         </section>
 
         <h2 class="section-title" id="uptime-section-project">
-                Uptime <span class="muted">Last 90 days</span>
+            Uptime <span class="muted">Last 90 days</span>
         </h2>
-        <section class="incidents">            
-            <div class="no-incidents">
-                <div class="uptime-bar"></div>
+        <section id="projects" class="services">
+            <div class="service-cardS" data-service="a" data-description="b">
             </div>
         </section>
 
         <h2 class="section-title">
-                Response Time
+            Response Time
         </h2>
-        <section class="incidents">            
-            <div class="no-incidents">
-                
-            </div>
+        <section class="chart-section">
+            <canvas id="responseTimeChart"></canvas>
         </section>
         <h2 class="section-title">
-                Recent Events
+            Recent Events
         </h2>
-        <section class="incidents">            
+        <section class="incidents">
             <div class="no-incidents">
                 No recent incidents to display.
             </div>
@@ -96,6 +94,7 @@
         </section>
     </div>
     <script src="/js/script.js"></script>
+    <script src="/js/chart.js"></script>
 </body>
 
 </html>
