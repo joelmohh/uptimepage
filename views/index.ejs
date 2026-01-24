@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>joelmo.dev</title>
-    <link rel="stylesheet" href="../public/css/style.css">
+    <link rel="stylesheet" href="/css/style.css">
 </head>
 
 <body>
@@ -34,16 +34,18 @@
         <div class="general-system">
             <div class="status"></div>
             <div class="info">
-                <h2>All Systems Online</h2>
-                <p>Last updated: June 10, 2024 - 14:00 UTC</p>
+                <h2><%= statusMessage %></h2>
+                <p>Last updated: <%= lastUpdated %></p>
             </div>
         </div>
         <div class="services">
-            <div class="service-card" data-service="Database" data-description="Our primary database service ensuring data integrity and availability.">
-            </div>
+            <% projects.forEach(function(project) { %>
+                <div class="service-card" data-service="<%= project.name %>" data-description="<%= project.description %>">
+                </div>
+            <% }); %>            
         </div>
     </div>
-    <script src="../public/js/script.js"></script>
+    <script src="/js/script.js"></script>
 </body>
 
 </html>

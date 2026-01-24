@@ -1,0 +1,21 @@
+{
+    "interval": 5,
+    "timeout": 3,
+    "services": [
+        {
+            "name": "Example Service",
+            "url": "https://example.com/health",
+            "description": "An example service for monitoring."
+        },
+        {
+            "name": "Database",
+            "url": "https://database.example.com/status",
+            "description": "Our primary database service ensuring data integrity and availability."
+        },
+        {
+            "name": "API Gateway",
+            "url": "https://api.example.com/ping",
+            "description": "The main API gateway for all client requests."
+        }
+    ]
+}
