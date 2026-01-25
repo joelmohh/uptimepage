@@ -356,3 +356,50 @@ body {
 #responseTimeChart{
     width: 100% !important;
 }
+
+/* LOGIN PAGE */
+.login-form{
+    max-width: 400px;
+    margin: 100px auto;
+    padding: 30px;
+    border: 1px solid var(--my-card-border);
+    border-radius: 10px;
+    background-color: var(--my-card-bg);
+}
+.login-form h1{
+    margin-bottom: 20px;
+}
+.loginForm label{
+    display: inline;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+.login-form input{
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid var(--my-card-border);
+    border-radius: 5px;
+    background-color: var(--my-bg-color);
+    color: var(--my-text-color);
+}
+.login-form button{
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: var(--my-accent);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+}
+.login-form button:hover{
+    background-color: #0e4e56;
+}
+.pass-incorect{
+    display: none;
+    color: #F44336;
+    margin-bottom: 15px;
+    text-align: center;
+    float: right;
+}

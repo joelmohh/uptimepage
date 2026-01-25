@@ -56,6 +56,7 @@ app.get('/:id', async (req, res) => {
 
 app.use('/api', require('./routes/api'));
 app.use('/auth', require('./routes/auth'));
+app.use('/dashboard', require('./routes/dash'));
 
 
 app.listen(PORT, () => {
