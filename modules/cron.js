@@ -60,9 +60,14 @@ function nDay(date) {
 }
 
 function updateRoll(history = [], dayKey, status, responseTime) {
-    const normalized = history.map(entry => ({
-        ...entry,
-        date: nDay(entry.date)
+    const safeResponse = Number.isFinite(responseTime) ? responseTime : 0;
+
+    const normalized = (Array.isArray(history) ? history : []).map(entry => ({
+        date: nDay(entry?.date || dayKey),
+        upCount: Number.isFinite(entry?.upCount) ? entry.upCount : 0,
+        downCount: Number.isFinite(entry?.downCount) ? entry.downCount : 0,
+        total: Number.isFinite(entry?.total) ? entry.total : 0,
+        avgResponseTime: Number.isFinite(entry?.avgResponseTime) ? entry.avgResponseTime : 0
     }));
 
     const idx = normalized.findIndex(entry => entry.date.getTime() === dayKey.getTime());
@@ -73,14 +78,17 @@ function updateRoll(history = [], dayKey, status, responseTime) {
             upCount: status === 'up' ? 1 : 0,
             downCount: status === 'down' ? 1 : 0,
             total: 1,
-            avgResponseTime: responseTime
+            avgResponseTime: safeResponse
         });
     } else {
         const entry = normalized[idx];
         const upCount = entry.upCount + (status === 'up' ? 1 : 0);
         const downCount = entry.downCount + (status === 'down' ? 1 : 0);
         const total = entry.total + 1;
-        const avgResponseTime = ((entry.avgResponseTime * entry.total) + responseTime) / total;
+        const prevWeighted = Number.isFinite(entry.avgResponseTime) && Number.isFinite(entry.total)
+            ? entry.avgResponseTime * entry.total
+            : 0;
+        const avgResponseTime = (prevWeighted + safeResponse) / total;
 
         normalized[idx] = {
             ...entry,

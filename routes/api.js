@@ -38,7 +38,7 @@ router.get('/services/:id', async (req, res) => {
         if (!project) {
             return res.status(404).json({ error: 'Service not found' });
         }
-        res.json(buildProjectViewModel(project));
+        res.json(vm(project));
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch service' });
     }
@@ -65,7 +65,7 @@ router.post('/services', authorize, async (req, res) => {
 
         newJob(savedProject);
 
-        res.status(201).json(buildProjectViewModel(savedProject));
+        res.status(201).json(vm(savedProject));
 
     } catch (err) {
         console.error(err);
@@ -98,7 +98,7 @@ router.put('/services/:id', authorize, async (req, res) => {
             return res.status(404).json({ error: 'Project not found' });
         }
         restartJob(updatedProject);
-        res.json(buildProjectViewModel(updatedProject));
+        res.json(vm(updatedProject));
     } catch (err) {
         res.status(500).json({ error: 'Failed to update project' });
     }
