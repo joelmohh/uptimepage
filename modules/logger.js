@@ -3,9 +3,9 @@ const path = require('node:path');
 
 const logsDir = path.join(__dirname, '../logs');
 
-if (!fs.existsSync(logsDir)) {
-    fs.mkdirSync(logsDir, { recursive: true });
-}
+//if (!fs.existsSync(logsDir)) {
+//    fs.mkdirSync(logsDir, { recursive: true });
+//}
 
 const LogLevel = {
     ERROR: 'ERROR',
