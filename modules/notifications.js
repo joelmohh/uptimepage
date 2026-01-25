@@ -9,7 +9,7 @@ async function sendNotification(projectId, subject, message) {
         }
 
         // Check if SMTP is configured
-        if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.SMTP_FROM || !process.env.UPDATE_EMAIL) {
+        if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.UPDATE_EMAIL || !process.env.UPDATE_EMAIL) {
             console.warn('SMTP not configured, notification not sent');
             return;
         }
@@ -25,7 +25,7 @@ async function sendNotification(projectId, subject, message) {
         });
 
         const mailOptions = {
-            from: process.env.SMTP_FROM,
+            from: process.env.UPDATE_EMAIL,
             to: process.env.UPDATE_EMAIL,
             subject: subject,
             text: message

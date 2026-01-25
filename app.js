@@ -11,7 +11,7 @@ const { newJob } = require('./modules/cron');
 const { vm, summary } = require('./modules/stats');
 const PROJECTS = require('./models/Project');
 
-const requiredEnv = ['MONGODB_URI', 'JWT_SECRET', 'AUTH_USER', 'AUTH_PASS', 'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM', 'UPDATE_EMAIL'];
+const requiredEnv = ['MONGODB_URI', 'JWT_SECRET', 'AUTH_USER', 'AUTH_PASS', 'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'UPDATE_EMAIL', 'UPDATE_EMAIL'];
 validateEnv(requiredEnv);
 
 const app = express();
