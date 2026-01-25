@@ -70,26 +70,12 @@
             <% projects.forEach(function(project) { %>
                 <div class="service-card"
                     data-service="<%= project.name %>"
-                    data-description="<%= project.description %>"
+                    data-description="<%= project.url %>"
                     data-history="<%= project.history %>"
                     data-uptime="<%= project.uptime90 %>"
                     data-status="<%= project.status %>"
                     projectID="<%= project.id %>"></div>
             <% }); %>
-        </section>
-
-        <h2 class="section-title">
-                Recent Incidents
-        </h2>
-        <section class="incidents">            
-            <div class="no-incidents">
-                No recent incidents to display.
-            </div>
-            <!--<div class="incident-card">
-                <h3 class="incident-title">API Gateway Latency</h3>
-                <p class="incident-time">2024-05-08 09:00 - 09:45 UTC</p>
-                <p class="incident-description">Increased latency observed on the API Gateway due to high traffic volume.</p>
-            </div>-->
         </section>
     </div>
     <script src="/js/script.js"></script>

@@ -79,5 +79,5 @@ document.querySelectorAll('.service-card').forEach(card => {
 document.querySelectorAll('.ls').forEach(el => {
     const words = el.textContent.trim().split(' ');
     const last = words.pop();
-    el.innerHTML = `${words.join(' ')} <span class="online">${last}</span>`;
+    el.innerHTML = `${words.join(' ')} <span class="${last.toLowerCase()}">${last}</span>`;
 });
