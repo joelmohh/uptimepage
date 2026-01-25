@@ -231,6 +231,14 @@ body {
     font-size: 1.1rem;
     font-weight: 600;
 }
+.service-header a{
+    text-decoration: none;
+    color: var(--my-text-color);
+}
+.service-header a:hover{
+    color: var(--my-accent);
+    text-decoration: underline;
+}
 
 .service-desc {
     font-size: 0.85rem;
@@ -275,6 +283,10 @@ body {
 
 .segment.down {
     background: #F44336;
+}
+.segment.none{
+    background: var(--my-muted-text);
+    opacity: 0.3;
 }
 
 .uptime-footer {

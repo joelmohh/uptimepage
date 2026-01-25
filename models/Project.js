@@ -22,6 +22,10 @@ const ProjectsSchema = new mongoose.Schema({
         enum: ['up', 'down'], 
         default: 'down' 
     },
+    last90Days: [{ 
+        date: Date, 
+        status: String 
+    }],
     lastChecked: { 
         type: Date 
     },

@@ -9,19 +9,19 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
+app.use(express.json());
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('[INFO] Connected to MongoDB'))
     .catch(err => console.error('[ERROR] MongoDB connection error:', err));
 
-// Config File
-const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json')));
+const PROJECTS = require('./models/Project');
 
 // Routes
-app.get('/', (req, res) => {
+app.get('/', async (req, res) => {
 
-    const projects = config.services;
+    const projects = await PROJECTS.find();
 
     res.render('index', {
         statusMessage: "All Systems Online",
@@ -30,11 +30,14 @@ app.get('/', (req, res) => {
         projects: projects
     });
 });
-app.get('/:id', (req, res) => {
-    const project = config.services.find(s => s.id === req.params.id);
-    //if (!project) {
-    //    return res.status(404).send('Service not found');
-    //}
+app.get('/:id', async (req, res) => {
+    if(req.params.id === 'favicon.ico') {
+        return res.status(204).end();
+    }
+    const project = await PROJECTS.findById(req.params.id);
+    if (!project) {
+        return res.status(404).send('Service not found');
+    }
 
     res.render('project', {
         statusMessage: `Dashboard is Online`,
@@ -43,6 +46,9 @@ app.get('/:id', (req, res) => {
         projects: [project]
     });
 });
+
+app.use('/api', require('./routes/api'));
+app.use('/auth', require('./routes/auth'));
 
 
 app.listen(PORT, () => {

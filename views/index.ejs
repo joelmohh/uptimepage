@@ -67,15 +67,9 @@
                 Uptime <span class="muted">Last 90 days</span>
         </h2>
         <section id="projects" class="services">
-            <div class="service-card" data-service="API Gateway"
-                data-description="Main entry point for all microservices.">
-            </div>
-            <div class="service-card" data-service="Main Database"
-                data-description="PostgreSQL cluster handling core application data.">
-            </div>
-            <div class="service-card" data-service="Auth Service"
-                data-description="Identity provider and session management.">
-            </div>
+            <% projects.forEach(function(project) { %>
+                <div class="service-card" data-service="<%= project.name %>" data-description="<%= project.description %>" last90days="<%= project.uptime90 %>" uptime="<%= project.uptime %>" projectID="<%= project.id %>"></div>
+            <% }); %>
         </section>
 
         <h2 class="section-title">
