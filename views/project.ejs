@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
@@ -71,7 +71,7 @@
         <section id="projects" class="services">
             <div class="service-card"
                 data-service="<%= project.name %>"
-                data-description="<%= project.description %>"
+                data-description="<%= project.url %>"
                 data-history="<%= project.history %>"
                 data-uptime="<%= project.uptime90 %>"
                 data-status="<%= project.status %>"
@@ -95,7 +95,7 @@
         </section>
     </div>
     <script>
-        window.responseChart = "<%- JSON.stringify(project.responseSeries) %>".stringify();
+        window.responseChart = <%- JSON.stringify(project.responseSeries) %>
     </script>
     <script src="/js/script.js"></script>
     <script src="/js/chart.js"></script>

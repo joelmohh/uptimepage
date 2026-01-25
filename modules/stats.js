@@ -27,9 +27,9 @@ function getUptime(history = [], days = 90) {
     return Number(((up / total) * 100).toFixed(2));
 }
 
-function history(history = [], days = 90, segments = 60) {
+function buildHistory(hist = [], days = 90, segments = 60) {
     const dayMap = new Map();
-    history.forEach(entry => {
+    hist.forEach(entry => {
         if (!entry || !entry.date) return;
         const key = nDay(entry.date).getTime();
         const ups = entry.upCount || 0;
@@ -39,7 +39,10 @@ function history(history = [], days = 90, segments = 60) {
         dayMap.set(key, ups / total);
     });
 
-    const start = nDay(new Date(Date.now() - (days - 1) * DAY_MS));
+    const today = nDay(new Date());
+    const start = new Date(today);
+    start.setDate(start.getDate() - (days - 1));
+    
     const values = [];
     for (let i = 0; i < days; i++) {
         const day = new Date(start);
@@ -51,7 +54,9 @@ function history(history = [], days = 90, segments = 60) {
     const span = Math.ceil(days / segments);
     let output = '';
     for (let i = 0; i < segments; i++) {
-        const slice = values.slice(i * span, (i + 1) * span);
+        const sliceStart = Math.floor(i * days / segments);
+        const sliceEnd = Math.floor((i + 1) * days / segments);
+        const slice = values.slice(sliceStart, sliceEnd);
         if (!slice.length) {
             output += '-';
             continue;
@@ -67,11 +72,15 @@ function history(history = [], days = 90, segments = 60) {
     return output;
 }
 
-function buildResponseSeries(history = [], days = 90) {
-    const cutoff = Date.now() - (days - 1) * DAY_MS;
-    const filtered = history
-        .filter(entry => entry && entry.date && typeof entry.avgResponseTime === 'number')
-        .filter(entry => new Date(entry.date).getTime() >= cutoff)
+function buildResponseSeries(hist = [], days = 90) {
+    const today = nDay(new Date());
+    const cutoff = new Date(today);
+    cutoff.setDate(cutoff.getDate() - (days - 1));
+    const cutoffTime = cutoff.getTime();
+
+    const filtered = hist
+        .filter(entry => entry && entry.date && Number.isFinite(entry.avgResponseTime))
+        .filter(entry => nDay(entry.date).getTime() >= cutoffTime && entry.avgResponseTime > 0)
         .sort((a, b) => new Date(a.date) - new Date(b.date));
 
     const labels = filtered.map(entry => new Date(entry.date).toLocaleDateString('pt-BR', { month: 'short', day: 'numeric' }));
@@ -96,7 +105,7 @@ function vm(project) {
         uptime30,
         uptime7,
         uptime1,
-        history: history(project.last90Days),
+        history: buildHistory(project.last90Days),
         responseSeries: buildResponseSeries(project.last90Days)
     };
 }
