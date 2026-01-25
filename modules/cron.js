@@ -1,8 +1,12 @@
 const cron = require('node-cron');
 const PROJECTS = require('../models/Project');
 const CHECKS = require('../models/Checks');
+const logger = require('./logger');
+const metrics = require('./metrics');
 
-const jobs = new Map(); 
+const jobs = new Map();
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; 
 
 function newJob(project) {
     const projectId = project._id.toString();
@@ -12,29 +16,55 @@ function newJob(project) {
     const job = cron.schedule(`*/${project.interval} * * * *`, async () => {
         const { status, responseTime, responseCode } = await checkService(project);
 
-        const freshProject = await PROJECTS.findById(projectId);
-        if (!freshProject) return;
-
         const now = new Date();
         const dayKey = nDay(now);
 
-        await CHECKS.create({
-            project: projectId,
+        try {
+            await CHECKS.create({
+                project: projectId,
+                status,
+                responseTime,
+                responseCode
+            });
+        } catch (err) {
+            logger.error('CRON', `Failed to create check for ${projectId}`, { error: err.message });
+        }
+
+        const updateData = {
             status,
-            responseTime,
-            responseCode
-        });
+            lastChecked: now,
+            lastResponseTime: responseTime,
+            lastResponseCode: responseCode
+        };
 
-        freshProject.status = status;
-        freshProject.lastChecked = now;
-        freshProject.lastResponseTime = responseTime;
-        freshProject.lastResponseCode = responseCode;
+        let retries = 0;
+        while (retries < MAX_RETRIES) {
+            try {
+                const freshProject = await PROJECTS.findById(projectId);
+                if (!freshProject) {
+                    logger.warn('CRON', `Project ${projectId} not found`);
+                    return;
+                }
 
-        freshProject.last90Days = updateRoll(freshProject.last90Days, dayKey, status, responseTime);
+                updateData.last90Days = updateRoll(freshProject.last90Days, dayKey, status, responseTime);
 
-        await freshProject.save();
-
-        console.log(`[CRON] ${freshProject.name}: ${status} (${responseTime}ms)`);
+                const updated = await PROJECTS.findByIdAndUpdate(projectId, updateData, { new: true });
+                
+                metrics.recordCronCheck(status, false);
+                logger.info('CRON', `${updated.name}: ${status}`, { responseTime });
+                return;
+            } catch (err) {
+                retries++;
+                if (err.name === 'VersionError' && retries < MAX_RETRIES) {
+                    logger.warn('CRON', `Version conflict, retrying (${retries}/${MAX_RETRIES})`, { projectId });
+                    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+                } else {
+                    metrics.recordCronCheck(status, true);
+                    logger.error('CRON', `Failed to update project ${projectId}`, { error: err.message, retries });
+                    return;
+                }
+            }
+        }
     });
 
     jobs.set(projectId, job);
@@ -123,6 +153,10 @@ async function checkService(project) {
 
         const responseTime = Date.now() - startTime;
         clearTimeout(timeout);
+        
+        if(!response.ok){
+            sendNotification(project._id.toString(), `Alert: Service ${project.name} is down. Response code: ${response.status}`, `The service at ${project.url} returned a status code of ${response.status}.`);
+        }
 
         return {
             status: response.ok ? 'up' : 'down',
@@ -141,4 +175,5 @@ async function checkService(project) {
         };
     }
 }
+
 module.exports = { checkService, newJob, restartJob, stopJob, jobs };
