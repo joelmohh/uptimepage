@@ -5,6 +5,8 @@ const path = require('node:path');
 const fs = require('node:fs');
 const jwt = require('jsonwebtoken');
 
+const { newJob } = require('../modules/cron');
+
 const PROJECTS = require('../models/Project');
 
 router.get('/services', (req, res) => {
@@ -23,29 +25,38 @@ router.get('/services/:id', (req, res) => {
     res.json(service);
 });
 
+// NEW PROJECT
 router.post('/services', async (req, res) => {
     const API_KEY = req.headers['x-api-key'];
     if (!API_KEY || !jwt.verify(API_KEY, process.env.JWT_SECRET || jwt.decode(API_KEY).username !== process.env.AUTH_USER)) {
         return res.status(403).json({ error: 'Forbidden' });
     }
+
     const { service_name, url, interval, timeout } = req.body;
     if (!service_name || !url || !interval || !timeout) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
-    const newProject = new PROJECTS({
-        name: service_name,
-        url,
-        interval,
-        timeout
-    });
 
     try {
+        const newProject = new PROJECTS({
+            name: service_name,
+            url,
+            interval,
+            timeout
+        });
+
         const savedProject = await newProject.save();
+
+        newJob(savedProject);
+
         res.status(201).json(savedProject);
+
     } catch (err) {
+        console.error(err);
         res.status(500).json({ error: 'Failed to create project' });
     }
 });
+// DELETE PROJECT
 router.delete('/services/:id', async (req, res) => {
     const API_KEY = req.headers['x-api-key'];
     if (!API_KEY || !jwt.verify(API_KEY, process.env.API_SECRET || jwt.decode(API_KEY).username !== process.env.AUTH_USER)) {

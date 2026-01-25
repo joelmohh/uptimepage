@@ -17,6 +17,7 @@ mongoose.connect(process.env.MONGODB_URI)
     .catch(err => console.error('[ERROR] MongoDB connection error:', err));
 
 const PROJECTS = require('./models/Project');
+const { newJob } = require('./modules/cron');
 
 // Routes
 app.get('/', async (req, res) => {
@@ -54,3 +55,8 @@ app.use('/auth', require('./routes/auth'));
 app.listen(PORT, () => {
     console.log(`[INFO] Server is running on port ${PORT}`);
 });
+
+(async () => {
+    const projects = await PROJECTS.find();
+    projects.forEach(newJob);
+})();
