@@ -3,6 +3,7 @@ const PROJECTS = require('../models/Project');
 const CHECKS = require('../models/Checks');
 const logger = require('./logger');
 const metrics = require('./metrics');
+const { sendNotification } = require('./notifications');
 
 const jobs = new Map();
 const MAX_RETRIES = 3;
