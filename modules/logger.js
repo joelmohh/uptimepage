@@ -35,7 +35,8 @@ function writeToFile(level, logEntry) {
     const fileName = `${level.toLowerCase()}-${date}.log`;
     const filePath = path.join(logsDir, fileName);
     
-    fs.appendFileSync(filePath, logEntry + '\n', { encoding: 'utf-8' });
+    // removed for vercel
+    //fs.appendFileSync(filePath, logEntry + '\n', { encoding: 'utf-8' });
 }
 
 function log(level, context, message, data) {
