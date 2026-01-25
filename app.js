@@ -18,17 +18,21 @@ mongoose.connect(process.env.MONGODB_URI)
 
 const PROJECTS = require('./models/Project');
 const { newJob } = require('./modules/cron');
+const { vm, summary } = require('./modules/stats');
 
 // Routes
 app.get('/', async (req, res) => {
 
     const projects = await PROJECTS.find();
+    const viewModels = projects.map(vm);
+    const dashboard = summary(viewModels);
 
     res.render('index', {
-        statusMessage: "All Systems Online",
-        statusClass: "online",
+        statusMessage: dashboard.statusMessage,
+        statusClass: dashboard.statusClass,
         lastUpdated: new Date().toUTCString(),
-        projects: projects
+        projects: viewModels,
+        overall: dashboard
     });
 });
 app.get('/:id', async (req, res) => {
@@ -40,11 +44,13 @@ app.get('/:id', async (req, res) => {
         return res.status(404).send('Service not found');
     }
 
+    const viewModel = vm(project);
+
     res.render('project', {
-        statusMessage: `Dashboard is Online`,
-        statusClass: "online",
+        statusMessage: viewModel.status === 'down' ? 'Service Degraded' : `${project.name} is Online`,
+        statusClass: viewModel.status === 'down' ? 'degraded' : 'online',
         lastUpdated: new Date().toUTCString(),
-        projects: [project]
+        project: viewModel
     });
 });
 

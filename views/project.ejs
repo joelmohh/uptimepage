@@ -38,27 +38,27 @@
             <div class="overall-stats">
                 <div class="overall-card">
                     <p class="overall-uptime">
-                        99.9%
+                        <%= project.uptime90.toFixed(2) %>%
                     </p>
                     <p class="overall-period">Last 90 days</p>
                 </div>
                 <div class="overall-card">
                     <p class="overall-uptime">
-                        99%
+                        <%= project.uptime30.toFixed(2) %>%
                     </p>
                     <p class="overall-period">Last 30 days</p>
                 </div>
 
                 <div class="overall-card">
                     <p class="overall-uptime">
-                        99%
+                        <%= project.uptime7.toFixed(2) %>%
                     </p>
                     <p class="overall-period">Last 7 days</p>
                 </div>
 
                 <div class="overall-card">
                     <p class="overall-uptime">
-                        99%
+                        <%= project.uptime1.toFixed(2) %>%
                     </p>
                     <p class="overall-period">Last 24 hours</p>
                 </div>
@@ -69,7 +69,13 @@
             Uptime <span class="muted">Last 90 days</span>
         </h2>
         <section id="projects" class="services">
-            <div class="service-cardS" data-service="a" data-description="b">
+            <div class="service-card"
+                data-service="<%= project.name %>"
+                data-description="<%= project.description %>"
+                data-history="<%= project.history %>"
+                data-uptime="<%= project.uptime90 %>"
+                data-status="<%= project.status %>"
+                projectID="<%= project.id %>">
             </div>
         </section>
 
@@ -86,13 +92,11 @@
             <div class="no-incidents">
                 No recent incidents to display.
             </div>
-            <!--<div class="incident-card">
-                <h3 class="incident-title">API Gateway Latency</h3>
-                <p class="incident-time">2024-05-08 09:00 - 09:45 UTC</p>
-                <p class="incident-description">Increased latency observed on the API Gateway due to high traffic volume.</p>
-            </div>-->
         </section>
     </div>
+    <script>
+        window.responseChart = "<%- JSON.stringify(project.responseSeries) %>".stringify();
+    </script>
     <script src="/js/script.js"></script>
     <script src="/js/chart.js"></script>
 </body>

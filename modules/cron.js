@@ -1,32 +1,36 @@
 const cron = require('node-cron');
 const PROJECTS = require('../models/Project');
+const CHECKS = require('../models/Checks');
 
 const jobs = new Map(); 
 
 function newJob(project) {
     const projectId = project._id.toString();
 
-    if (jobs.has(projectId)) return;
+    stopJob(projectId);
 
     const job = cron.schedule(`*/${project.interval} * * * *`, async () => {
-        const { status, responseTime } = await checkService(project);
+        const { status, responseTime, responseCode } = await checkService(project);
 
         const freshProject = await PROJECTS.findById(projectId);
         if (!freshProject) return;
 
-        freshProject.status = status;
-        freshProject.lastChecked = new Date();
-        freshProject.lastResponseTime = responseTime;
+        const now = new Date();
+        const dayKey = nDay(now);
 
-        freshProject.last90Days.push({
-            date: new Date(),
+        await CHECKS.create({
+            project: projectId,
             status,
-            responseTime
+            responseTime,
+            responseCode
         });
 
-        if (freshProject.last90Days.length > 90) {
-            freshProject.last90Days.shift();
-        }
+        freshProject.status = status;
+        freshProject.lastChecked = now;
+        freshProject.lastResponseTime = responseTime;
+        freshProject.lastResponseCode = responseCode;
+
+        freshProject.last90Days = updateRoll(freshProject.last90Days, dayKey, status, responseTime);
 
         await freshProject.save();
 
@@ -34,6 +38,64 @@ function newJob(project) {
     });
 
     jobs.set(projectId, job);
+}
+
+function stopJob(projectId) {
+    const job = jobs.get(projectId);
+    if (job) {
+        job.stop();
+        jobs.delete(projectId);
+    }
+}
+
+function restartJob(project) {
+    stopJob(project._id.toString());
+    newJob(project);
+}
+
+function nDay(date) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
+
+function updateRoll(history = [], dayKey, status, responseTime) {
+    const normalized = history.map(entry => ({
+        ...entry,
+        date: nDay(entry.date)
+    }));
+
+    const idx = normalized.findIndex(entry => entry.date.getTime() === dayKey.getTime());
+
+    if (idx === -1) {
+        normalized.push({
+            date: dayKey,
+            upCount: status === 'up' ? 1 : 0,
+            downCount: status === 'down' ? 1 : 0,
+            total: 1,
+            avgResponseTime: responseTime
+        });
+    } else {
+        const entry = normalized[idx];
+        const upCount = entry.upCount + (status === 'up' ? 1 : 0);
+        const downCount = entry.downCount + (status === 'down' ? 1 : 0);
+        const total = entry.total + 1;
+        const avgResponseTime = ((entry.avgResponseTime * entry.total) + responseTime) / total;
+
+        normalized[idx] = {
+            ...entry,
+            upCount,
+            downCount,
+            total,
+            avgResponseTime
+        };
+    }
+
+    const sorted = normalized.sort((a, b) => a.date - b.date);
+    if (sorted.length > 90) {
+        return sorted.slice(sorted.length - 90);
+    }
+    return sorted;
 }
 
 
@@ -56,7 +118,8 @@ async function checkService(project) {
 
         return {
             status: response.ok ? 'up' : 'down',
-            responseTime
+            responseTime,
+            responseCode: response.status
         };
 
     } catch (err) {
@@ -65,8 +128,9 @@ async function checkService(project) {
 
         return {
             status: 'down',
-            responseTime
+            responseTime,
+            responseCode: 0
         };
     }
 }
-module.exports = { checkService, newJob, jobs };
+module.exports = { checkService, newJob, restartJob, stopJob, jobs };

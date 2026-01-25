@@ -1,6 +1,4 @@
-// ===================
-// THEME TOGGLE
-// ===================
+// theme toggle
 const themeToggleBtn = document.querySelector('.theme-toggle');
 
 if (themeToggleBtn) {
@@ -29,20 +27,22 @@ function updateThemeIcon(theme) {
 }
 
 
-// ===================
-// UPTIME BARS (COM DADOS)
-// ===================
+// UPTIME BARS
 document.querySelectorAll('.service-card').forEach(card => {
     const name = card.dataset.service;
     const description = card.dataset.description || 'No description available.';
-    const last90Days = card.getAttribute('last90days') || '';
-    const uptime = card.getAttribute('uptime') || '0';
+    const history = card.dataset.history || '';
+    const uptime = card.dataset.uptime || '0';
     const id = card.getAttribute('projectID') || '#';
+    const status = card.dataset.status === 'down' ? 'down' : 'up';
+
+    const badgeClass = status === 'up' ? 'online' : 'degraded';
+    const badgeText = status === 'up' ? 'Operational' : 'Degraded';
 
     card.innerHTML = `
         <div class="service-header">
             <h3><a href="/${id}">${name}</a></h3>
-            <span class="badge online">Operational</span>
+            <span class="badge ${badgeClass}">${badgeText}</span>
         </div>
         <p class="service-desc">${description}</p>
         <div class="uptime-wrapper">
@@ -57,13 +57,18 @@ document.querySelectorAll('.service-card').forEach(card => {
 
     const barContainer = card.querySelector('.uptime-bar');
 
-    for (let i = 0; i < 60; i++) {
+    const segments = history || ''.padEnd(60, '-');
+    const totalSegments = Math.max(segments.length, 60);
+
+    for (let i = 0; i < totalSegments; i++) {
         const segment = document.createElement('span');
         segment.classList.add('segment');
 
-        if (!last90Days || last90Days.length < 60) {
+        const value = segments.charAt(i) || '-';
+
+        if (value === '-') {
             segment.classList.add('none');
-        } else if (last90Days.charAt(i) === '0') {
+        } else if (value === '0') {
             segment.classList.add('down');
         }
 
@@ -71,42 +76,8 @@ document.querySelectorAll('.service-card').forEach(card => {
     }
 });
 
-
-// ===================
-// DESTACAR ÚLTIMA PALAVRA
-// ===================
 document.querySelectorAll('.ls').forEach(el => {
     const words = el.textContent.trim().split(' ');
     const last = words.pop();
     el.innerHTML = `${words.join(' ')} <span class="online">${last}</span>`;
-});
-
-
-// ===================
-// UPTIME ALEATÓRIO
-// ===================
-document.querySelectorAll('.service-cardS').forEach(card => {
-    card.innerHTML = `
-        <div class="uptime-wrapper">
-            <div class="uptime-bar"></div>
-            <div class="uptime-footer">
-                <span>90 days ago</span>
-                <span>100% uptime</span>
-                <span>Today</span>
-            </div>
-        </div>
-    `;
-
-    const barContainer = card.querySelector('.uptime-bar');
-
-    for (let i = 0; i < 60; i++) {
-        const segment = document.createElement('span');
-        segment.classList.add('segment');
-
-        if (Math.random() > 0.98) {
-            segment.classList.add('down');
-        }
-
-        barContainer.appendChild(segment);
-    }
 });

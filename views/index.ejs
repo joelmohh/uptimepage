@@ -36,27 +36,27 @@
             <div class="overall-stats">
                 <div class="overall-card">
                     <p class="overall-uptime">
-                        99.9%
+                        <%= overall.uptime90.toFixed(2) %>%
                     </p>
                     <p class="overall-period">Last 90 days</p>
                 </div>
                 <div class="overall-card">
                     <p class="overall-uptime">
-                        99%
+                        <%= overall.uptime30.toFixed(2) %>%
                     </p>
                     <p class="overall-period">Last 30 days</p>
                 </div>
 
                 <div class="overall-card">
                     <p class="overall-uptime">
-                        99%
+                        <%= overall.uptime7.toFixed(2) %>%
                     </p>
                     <p class="overall-period">Last 7 days</p>
                 </div>
 
                 <div class="overall-card">
                     <p class="overall-uptime">
-                        99%
+                        <%= overall.uptime1.toFixed(2) %>%
                     </p>
                     <p class="overall-period">Last 24 hours</p>
                 </div>
@@ -68,7 +68,13 @@
         </h2>
         <section id="projects" class="services">
             <% projects.forEach(function(project) { %>
-                <div class="service-card" data-service="<%= project.name %>" data-description="<%= project.description %>" last90days="<%= project.uptime90 %>" uptime="<%= project.uptime %>" projectID="<%= project.id %>"></div>
+                <div class="service-card"
+                    data-service="<%= project.name %>"
+                    data-description="<%= project.description %>"
+                    data-history="<%= project.history %>"
+                    data-uptime="<%= project.uptime90 %>"
+                    data-status="<%= project.status %>"
+                    projectID="<%= project.id %>"></div>
             <% }); %>
         </section>
 

@@ -1,16 +1,29 @@
-const ctx = document.getElementById('responseTimeChart').getContext('2d');
-
-const labels = [];
-const data = [];
-const today = new Date();
-
-for (let i = 89; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - i);
-    labels.push(date.toLocaleDateString('pt-BR', { month: 'short', day: 'numeric' }));
-    // Generate random response times between 80ms and 200ms
-    data.push(Math.floor(Math.random() * 120) + 80);
+const canvas = document.getElementById('responseTimeChart');
+if (!canvas) {
+    return;
 }
+
+const ctx = canvas.getContext('2d');
+
+const fallback = () => {
+    const labels = [];
+    const data = [];
+    const today = new Date();
+    for (let i = 89; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        labels.push(date.toLocaleDateString('pt-BR', { month: 'short', day: 'numeric' }));
+        data.push(Math.floor(Math.random() * 120) + 80);
+    }
+    return { labels, data };
+};
+
+const series = (window.responseChart && window.responseChart.labels && window.responseChart.labels.length)
+    ? window.responseChart
+    : fallback();
+
+const labels = series.labels;
+const data = series.data;
 
 // Get CSS variables for theme colors
 const computedStyle = getComputedStyle(document.documentElement);
