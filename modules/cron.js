@@ -177,4 +177,66 @@ async function checkService(project) {
     }
 }
 
-module.exports = { checkService, newJob, restartJob, stopJob, jobs };
+async function runAllJobs() {
+    const projects = await PROJECTS.find();
+    const results = [];
+    
+    for (const project of projects) {
+        const { status, responseTime, responseCode } = await checkService(project);
+        const now = new Date();
+        const dayKey = nDay(now);
+        const projectId = project._id.toString();
+
+        try {
+            await CHECKS.create({
+                project: projectId,
+                status,
+                responseTime,
+                responseCode
+            });
+        } catch (err) {
+            logger.error('CRON', `Failed to create check for ${projectId}`, { error: err.message });
+        }
+
+        const updateData = {
+            status,
+            lastChecked: now,
+            lastResponseTime: responseTime,
+            lastResponseCode: responseCode
+        };
+
+        let retries = 0;
+        while (retries < MAX_RETRIES) {
+            try {
+                const freshProject = await PROJECTS.findById(projectId);
+                if (!freshProject) {
+                    logger.warn('CRON', `Project ${projectId} not found`);
+                    break;
+                }
+
+                updateData.last90Days = updateRoll(freshProject.last90Days, dayKey, status, responseTime);
+
+                const updated = await PROJECTS.findByIdAndUpdate(projectId, updateData, { new: true });
+                
+                metrics.recordCronCheck(status, false);
+                logger.info('CRON', `${updated.name}: ${status}`, { responseTime });
+                results.push({ projectId, status });
+                break;
+            } catch (err) {
+                retries++;
+                if (err.name === 'VersionError' && retries < MAX_RETRIES) {
+                    logger.warn('CRON', `Version conflict, retrying (${retries}/${MAX_RETRIES})`, { projectId });
+                    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+                } else {
+                    metrics.recordCronCheck(status, true);
+                    logger.error('CRON', `Failed to update project ${projectId}`, { error: err.message, retries });
+                    break;
+                }
+            }
+        }
+    }
+    
+    return results;
+}
+
+module.exports = { checkService, newJob, restartJob, stopJob, jobs, runAllJobs };

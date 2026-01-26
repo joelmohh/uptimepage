@@ -3,7 +3,7 @@ const router = express.Router();
 
 const jwt = require('jsonwebtoken');
 
-const { newJob, stopJob, restartJob } = require('../modules/cron');
+const { newJob, stopJob, restartJob, runAllJobs } = require('../modules/cron');
 const { vm } = require('../modules/stats');
 const logger = require('../modules/logger');
 const metrics = require('../modules/metrics');
@@ -209,6 +209,16 @@ router.put('/services/:id', authorize, async (req, res) => {
         const duration = Date.now() - startTime;
         metrics.recordRequest(500, duration);
         res.status(500).json({ error: 'Failed to update project' });
+    }
+});
+
+router.get('/cron', async (req, res) => {
+    try {
+        const results = await runAllJobs();
+        res.json({ success: true, checks: results.length });
+    } catch (err) {
+        logger.error('API', 'Cron job failed', { error: err.message });
+        res.status(500).json({ error: 'Cron job failed' });
     }
 });
 
