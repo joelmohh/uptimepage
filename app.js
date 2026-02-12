@@ -7,7 +7,7 @@ require('dotenv').config();
 const logger = require('./modules/logger');
 const metrics = require('./modules/metrics');
 const { validateEnv, isValidObjectId } = require('./modules/validation');
-const { newJob } = require('./modules/cron');
+const { startGlobalChecker } = require('./modules/cron');
 const { vm, summary } = require('./modules/stats');
 const PROJECTS = require('./models/Project');
 
@@ -103,6 +103,10 @@ app.listen(PORT, () => {
 });
 
 (async () => {
-    const projects = await PROJECTS.find();
-    projects.forEach(newJob);
+    try {
+        await PROJECTS.find();
+        startGlobalChecker();
+    } catch (err) {
+        logger.error('APP', 'Failed to start global checker', { error: err.message });
+    }
 })();

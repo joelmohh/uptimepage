@@ -1,4 +1,3 @@
-const cron = require('node-cron');
 const PROJECTS = require('../models/Project');
 const CHECKS = require('../models/Checks');
 const logger = require('./logger');
@@ -7,80 +6,62 @@ const { sendNotification } = require('./notifications');
 
 const jobs = new Map();
 const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000; 
+const RETRY_DELAY = 1000;
+const CHECK_INTERVAL = 60000;
+let globalCheckInterval = null;
+let isCheckRunning = false;
+
+function startGlobalChecker() {
+    if (globalCheckInterval) return;
+    
+    logger.info('CRON', 'Starting global checker');
+    
+    performGlobalCheck();
+    
+    globalCheckInterval = setInterval(performGlobalCheck, CHECK_INTERVAL);
+}
+
+function stopGlobalChecker() {
+    if (globalCheckInterval) {
+        clearInterval(globalCheckInterval);
+        globalCheckInterval = null;
+        logger.info('CRON', 'Global checker stopped');
+    }
+}
+
+async function performGlobalCheck() {
+    if (isCheckRunning) {
+        logger.warn('CRON', 'Check already running, skipping this cycle');
+        return;
+    }
+    
+    isCheckRunning = true;
+    try {
+        await runAllJobs();
+    } catch (err) {
+        logger.error('CRON', 'Error in global check', { error: err.message });
+    } finally {
+        isCheckRunning = false;
+    }
+}
 
 function newJob(project) {
     const projectId = project._id.toString();
-
-    stopJob(projectId);
-
-    const job = cron.schedule(`*/${project.interval} * * * *`, async () => {
-        const { status, responseTime, responseCode } = await checkService(project);
-
-        const now = new Date();
-        const dayKey = nDay(now);
-
-        try {
-            await CHECKS.create({
-                project: projectId,
-                status,
-                responseTime,
-                responseCode
-            });
-        } catch (err) {
-            logger.error('CRON', `Failed to create check for ${projectId}`, { error: err.message });
-        }
-
-        const updateData = {
-            status,
-            lastChecked: now,
-            lastResponseTime: responseTime,
-            lastResponseCode: responseCode
-        };
-
-        let retries = 0;
-        while (retries < MAX_RETRIES) {
-            try {
-                const freshProject = await PROJECTS.findById(projectId);
-                if (!freshProject) {
-                    logger.warn('CRON', `Project ${projectId} not found`);
-                    return;
-                }
-
-                updateData.last90Days = updateRoll(freshProject.last90Days, dayKey, status, responseTime);
-
-                const updated = await PROJECTS.findByIdAndUpdate(projectId, updateData, { new: true });
-                
-                metrics.recordCronCheck(status, false);
-                logger.info('CRON', `${updated.name}: ${status}`, { responseTime });
-                return;
-            } catch (err) {
-                retries++;
-                if (err.name === 'VersionError' && retries < MAX_RETRIES) {
-                    logger.warn('CRON', `Version conflict, retrying (${retries}/${MAX_RETRIES})`, { projectId });
-                    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-                } else {
-                    metrics.recordCronCheck(status, true);
-                    logger.error('CRON', `Failed to update project ${projectId}`, { error: err.message, retries });
-                    return;
-                }
-            }
-        }
-    });
-
-    jobs.set(projectId, job);
+    jobs.set(projectId, { active: true, interval: project.interval });
+    
+    if (!globalCheckInterval) {
+        startGlobalChecker();
+    }
 }
 
 function stopJob(projectId) {
     const job = jobs.get(projectId);
     if (job) {
-        job.stop();
         jobs.delete(projectId);
     }
 }
 
 function restartJob(project) {
-    stopJob(project._id.toString());
     newJob(project);
 }
 
@@ -239,4 +220,14 @@ async function runAllJobs() {
     return results;
 }
 
-module.exports = { checkService, newJob, restartJob, stopJob, jobs, runAllJobs };
+module.exports = { 
+    checkService, 
+    newJob, 
+    restartJob, 
+    stopJob, 
+    jobs, 
+    runAllJobs,
+    startGlobalChecker,
+    stopGlobalChecker,
+    performGlobalCheck
+};

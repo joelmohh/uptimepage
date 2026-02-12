@@ -3,7 +3,7 @@ const router = express.Router();
 
 const jwt = require('jsonwebtoken');
 
-const { newJob, stopJob, restartJob, runAllJobs } = require('../modules/cron');
+const { newJob, stopJob, restartJob, runAllJobs, startGlobalChecker, stopGlobalChecker, performGlobalCheck } = require('../modules/cron');
 const { vm } = require('../modules/stats');
 const logger = require('../modules/logger');
 const metrics = require('../modules/metrics');
@@ -219,6 +219,36 @@ router.get('/cron', async (req, res) => {
     } catch (err) {
         logger.error('API', 'Cron job failed', { error: err.message });
         res.status(500).json({ error: 'Cron job failed' });
+    }
+});
+
+router.post('/cron/check', authorize, async (req, res) => {
+    try {
+        await performGlobalCheck();
+        res.json({ success: true, message: 'Global check performed' });
+    } catch (err) {
+        logger.error('API', 'Global check failed', { error: err.message });
+        res.status(500).json({ error: 'Global check failed' });
+    }
+});
+
+router.post('/cron/start', authorize, async (req, res) => {
+    try {
+        startGlobalChecker();
+        res.json({ success: true, message: 'Global checker started' });
+    } catch (err) {
+        logger.error('API', 'Failed to start global checker', { error: err.message });
+        res.status(500).json({ error: 'Failed to start global checker' });
+    }
+});
+
+router.post('/cron/stop', authorize, async (req, res) => {
+    try {
+        stopGlobalChecker();
+        res.json({ success: true, message: 'Global checker stopped' });
+    } catch (err) {
+        logger.error('API', 'Failed to stop global checker', { error: err.message });
+        res.status(500).json({ error: 'Failed to stop global checker' });
     }
 });
 
