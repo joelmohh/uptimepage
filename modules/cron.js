@@ -89,14 +89,17 @@ async function checkService(project) {
         const responseTime = Date.now() - startTime;
         clearTimeout(timeout);
 
-        if (!response.ok) {
+        const isOnline = response.ok || response.status === 403;
+        const serviceStatus = isOnline ? 'up' : 'down';
+
+        if (!isOnline) {
             sendNotification(project.name, `[DOWN] Alert: Your project ${project.name} is down.`, `The service at ${project.url} returned a status code of ${response.status}.`);
         }
 
 
         const newCheck = new CHECKS({
             project: projectId,
-            status: response.ok ? 'up' : 'down',
+            status: serviceStatus,
             responseTime,
             responseCode: response.status
         });
@@ -104,17 +107,17 @@ async function checkService(project) {
         const freshProject = await PROJECTS.findById(projectId);
 
         await PROJECTS.findByIdAndUpdate(projectId, {
-            status: response.ok ? 'up' : 'down',
+            status: serviceStatus,
             lastResponseTime: responseTime,
             lastResponseCode: response.status,
-            last90Days: updateLast90Days(freshProject?.last90Days || project.last90Days, response.ok ? 'up' : 'down', responseTime),
+            last90Days: updateLast90Days(freshProject?.last90Days || project.last90Days, serviceStatus, responseTime),
             lastChecked: new Date()
         }, { new: true });
 
         await newCheck.save();
 
         return {
-            status: response.ok ? 'up' : 'down',
+            status: serviceStatus,
             responseTime,
             responseCode: response.status
         };
