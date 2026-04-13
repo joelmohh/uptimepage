@@ -3,15 +3,15 @@ const router = express.Router();
 
 const jwt = require('jsonwebtoken');
 
-const { newJob, stopJob, restartJob, runAllJobs, startGlobalChecker, stopGlobalChecker, performGlobalCheck } = require('../modules/cron');
+// Module imports
 const { vm } = require('../modules/stats');
-const logger = require('../modules/logger');
-const metrics = require('../modules/metrics');
 const { isValidObjectId, isValidUrl } = require('../modules/validation');
-
+const { checkService } = require('../modules/cron');
 const PROJECTS = require('../models/Project');
 const defaults = require('../config.json');
+var { projectsList } = require('../modules/cron');
 
+// Authorization middleware
 function authorize(req, res, next) {
     const token = req.headers['x-api-key'];
     if (!token) return res.status(403).json({ error: 'Forbidden' });
@@ -26,10 +26,10 @@ function authorize(req, res, next) {
     }
 }
 
+// API Endpoints
 router.get('/services', async (req, res) => {
-    const startTime = Date.now();
     try {
-        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const page = Math.max(1, parseInt(req.query.page) || 1) || req.query.page;
         const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 10));
         const status = req.query.status;
         const skip = (page - 1) * limit;
@@ -46,9 +46,6 @@ router.get('/services', async (req, res) => {
 
         const total = await PROJECTS.countDocuments(query);
 
-        const duration = Date.now() - startTime;
-        metrics.recordRequest(200, duration);
-
         res.json({
             data: projects.map(vm),
             pagination: {
@@ -59,123 +56,102 @@ router.get('/services', async (req, res) => {
             }
         });
     } catch (err) {
-        logger.error('API', 'Failed to fetch services', { error: err.message });
-        const duration = Date.now() - startTime;
-        metrics.recordRequest(500, duration);
+        console.error('[ERROR] Failed to fetch services', { error: err.message });
         res.status(500).json({ error: 'Failed to fetch services' });
     }    
 });
 
 router.get('/services/:id', async (req, res) => {
-    const startTime = Date.now();
     try {
+
         if (!isValidObjectId(req.params.id)) {
-            const duration = Date.now() - startTime;
-            metrics.recordRequest(404, duration);
             return res.status(404).json({ error: 'Service not found' });
         }
 
         const project = await PROJECTS.findById(req.params.id);
         if (!project) {
-            const duration = Date.now() - startTime;
-            metrics.recordRequest(404, duration);
             return res.status(404).json({ error: 'Service not found' });
         }
 
-        const duration = Date.now() - startTime;
-        metrics.recordRequest(200, duration);
         res.json(vm(project));
+
     } catch (err) {
-        logger.error('API', 'Failed to fetch service', { error: err.message });
-        const duration = Date.now() - startTime;
-        metrics.recordRequest(500, duration);
+    
+        console.error('[ERROR] Failed to fetch service', { error: err.message });
         res.status(500).json({ error: 'Failed to fetch service' });
+    
     }
 });
 
-router.post('/services', authorize, async (req, res) => {
-    const startTime = Date.now();
-    try {
-        const { service_name, name, url, interval, timeout, description } = req.body;
-        const finalName = name || service_name;
 
-        if (!finalName || !url) {
-            const duration = Date.now() - startTime;
-            metrics.recordRequest(400, duration);
+router.post('/services', authorize, async (req, res) => {
+    try {
+        const { name, url, interval, timeout } = req.body
+
+        if (!name || !url) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
         if (!isValidUrl(url)) {
-            const duration = Date.now() - startTime;
-            metrics.recordRequest(400, duration);
             return res.status(400).json({ error: 'Invalid URL format' });
         }
 
         const newProject = new PROJECTS({
-            name: finalName,
-            description: description || '',
+            name: name,
             url,
             interval: interval || defaults.interval,
             timeout: timeout || defaults.timeout
         });
 
         const savedProject = await newProject.save();
-        newJob(savedProject);
+        await checkService(savedProject);
+        const freshProject = await PROJECTS.findById(savedProject._id);
 
-        const duration = Date.now() - startTime;
-        metrics.recordRequest(201, duration);
-        res.status(201).json(vm(savedProject));
+        // ADD TO PROJECTS LIST
+        projectsList.push({
+            id: savedProject._id.toString(),
+            name: savedProject.name,
+            url: savedProject.url,
+        });
+
+        res.status(201).json(vm(freshProject || savedProject));
+        
     } catch (err) {
-        logger.error('API', 'Failed to create project', { error: err.message });
-        const duration = Date.now() - startTime;
-        metrics.recordRequest(500, duration);
+        console.error('[ERROR] Failed to create project', { error: err.message });
         res.status(500).json({ error: 'Failed to create project' });
     }
 });
 
 router.delete('/services/:id', authorize, async (req, res) => {
-    const startTime = Date.now();
     try {
         if (!isValidObjectId(req.params.id)) {
-            const duration = Date.now() - startTime;
-            metrics.recordRequest(404, duration);
             return res.status(404).json({ error: 'Project not found' });
         }
 
         const deletedProject = await PROJECTS.findByIdAndDelete(req.params.id);
         if (!deletedProject) {
-            const duration = Date.now() - startTime;
-            metrics.recordRequest(404, duration);
             return res.status(404).json({ error: 'Project not found' });
         }
 
-        stopJob(req.params.id);
+        // REMOVE FROM PROJECTS LIST
+        projectsList = projectsList.filter(project => project.id !== deletedProject._id.toString());
 
-        const duration = Date.now() - startTime;
-        metrics.recordRequest(200, duration);
         res.json({ message: 'Project deleted successfully' });
     } catch (err) {
-        logger.error('API', 'Failed to delete project', { error: err.message });
-        const duration = Date.now() - startTime;
-        metrics.recordRequest(500, duration);
+        console.error('[ERROR] Failed to delete project', { error: err.message });
         res.status(500).json({ error: 'Failed to delete project' });
     }
 });
 
 router.put('/services/:id', authorize, async (req, res) => {
-    const startTime = Date.now();
     try {
         if (!isValidObjectId(req.params.id)) {
-            const duration = Date.now() - startTime;
-            metrics.recordRequest(404, duration);
             return res.status(404).json({ error: 'Project not found' });
         }
 
-        const { name, url, interval, timeout, status, description } = req.body;
+        const { name, url, interval, timeout, status } = req.body;
 
         if (url && !isValidUrl(url)) {
-            const duration = Date.now() - startTime;
-            metrics.recordRequest(400, duration);
             return res.status(400).json({ error: 'Invalid URL format' });
         }
 
@@ -185,7 +161,6 @@ router.put('/services/:id', authorize, async (req, res) => {
         if (interval !== undefined) updateData.interval = interval;
         if (timeout !== undefined) updateData.timeout = timeout;
         if (status !== undefined) updateData.status = status;
-        if (description !== undefined) updateData.description = description;
 
         const updatedProject = await PROJECTS.findByIdAndUpdate(
             req.params.id,
@@ -194,62 +169,39 @@ router.put('/services/:id', authorize, async (req, res) => {
         );
 
         if (!updatedProject) {
-            const duration = Date.now() - startTime;
-            metrics.recordRequest(404, duration);
             return res.status(404).json({ error: 'Project not found' });
         }
 
-        restartJob(updatedProject);
+        //UPDATE PROJECTS LIST (remove and add)
+        projectsList = projectsList.filter(project => project.id !== updatedProject._id.toString());
+        projectsList.push({
+            id: updatedProject._id.toString(),
+            name: updatedProject.name,
+            url: updatedProject.url
+        });
 
-        const duration = Date.now() - startTime;
-        metrics.recordRequest(200, duration);
         res.json(vm(updatedProject));
     } catch (err) {
-        logger.error('API', 'Failed to update project', { error: err.message });
-        const duration = Date.now() - startTime;
-        metrics.recordRequest(500, duration);
+        console.error('[ERROR] Failed to update project', { error: err.message });
         res.status(500).json({ error: 'Failed to update project' });
     }
 });
 
 router.get('/cron', async (req, res) => {
     try {
-        const results = await runAllJobs();
-        res.json({ success: true, checks: results.length });
-    } catch (err) {
-        logger.error('API', 'Cron job failed', { error: err.message });
-        res.status(500).json({ error: 'Cron job failed' });
+        const projects = projectsList.length > 0 ? projectsList : await PROJECTS.find();
+
+        for (const project of projects) {
+            const result = await checkService(project);
+            console.log(`[CRON] Checked ${project.name}: ${result.status} (${result.responseTime}ms)`);
+        }
+
+        res.json({ message: 'Cron job executed successfully' });
+    }
+    catch (err) {
+        console.error('[ERROR] Failed to execute cron job', { error: err.message });
+        res.status(500).json({ error: 'Failed to execute cron job' });
     }
 });
 
-router.post('/cron/check', authorize, async (req, res) => {
-    try {
-        await performGlobalCheck();
-        res.json({ success: true, message: 'Global check performed' });
-    } catch (err) {
-        logger.error('API', 'Global check failed', { error: err.message });
-        res.status(500).json({ error: 'Global check failed' });
-    }
-});
-
-router.post('/cron/start', authorize, async (req, res) => {
-    try {
-        startGlobalChecker();
-        res.json({ success: true, message: 'Global checker started' });
-    } catch (err) {
-        logger.error('API', 'Failed to start global checker', { error: err.message });
-        res.status(500).json({ error: 'Failed to start global checker' });
-    }
-});
-
-router.post('/cron/stop', authorize, async (req, res) => {
-    try {
-        stopGlobalChecker();
-        res.json({ success: true, message: 'Global checker stopped' });
-    } catch (err) {
-        logger.error('API', 'Failed to stop global checker', { error: err.message });
-        res.status(500).json({ error: 'Failed to stop global checker' });
-    }
-});
-
-module.exports = router;
+module.exports = router

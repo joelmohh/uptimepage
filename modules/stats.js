@@ -89,11 +89,54 @@ function buildResponseSeries(hist = [], days = 90) {
     return { labels, data };
 }
 
+function normalizeHistory(project) {
+    const input = Array.isArray(project.last90Days) ? project.last90Days : [];
+
+    const normalized = input
+        .filter(entry => entry && entry.date)
+        .map(entry => {
+            const ups = Number(entry.upCount || 0);
+            const downs = Number(entry.downCount || 0);
+            const total = ups + downs;
+            const avg = Number(entry.avgResponseTime || 0);
+
+            return {
+                date: new Date(entry.date),
+                upCount: ups,
+                downCount: downs,
+                total,
+                avgResponseTime: Number.isFinite(avg) ? avg : 0
+            };
+        })
+        .filter(entry => !Number.isNaN(entry.date.getTime()));
+
+    if (normalized.length > 0) {
+        return normalized;
+    }
+
+    const fallbackDate = project.lastChecked || project.createdAt;
+    if (!fallbackDate) {
+        return [];
+    }
+
+    const isUp = project.status === 'up';
+    const fallbackResponse = Number(project.lastResponseTime || 0);
+
+    return [{
+        date: new Date(fallbackDate),
+        upCount: isUp ? 1 : 0,
+        downCount: isUp ? 0 : 1,
+        total: 1,
+        avgResponseTime: Number.isFinite(fallbackResponse) ? fallbackResponse : 0
+    }];
+}
+
 function vm(project) {
-    const uptime90 = getUptime(project.last90Days, 90) ?? 0;
-    const uptime30 = getUptime(project.last90Days, 30) ?? uptime90;
-    const uptime7 = getUptime(project.last90Days, 7) ?? uptime30;
-    const uptime1 = getUptime(project.last90Days, 1) ?? uptime7;
+    const normalizedHistory = normalizeHistory(project);
+    const uptime90 = getUptime(normalizedHistory, 90) ?? 0;
+    const uptime30 = getUptime(normalizedHistory, 30) ?? uptime90;
+    const uptime7 = getUptime(normalizedHistory, 7) ?? uptime30;
+    const uptime1 = getUptime(normalizedHistory, 1) ?? uptime7;
 
     return {
         id: project._id.toString(),
@@ -105,8 +148,8 @@ function vm(project) {
         uptime30,
         uptime7,
         uptime1,
-        history: buildHistory(project.last90Days),
-        responseSeries: buildResponseSeries(project.last90Days)
+        history: buildHistory(normalizedHistory),
+        responseSeries: buildResponseSeries(normalizedHistory)
     };
 }
 

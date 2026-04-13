@@ -1,23 +1,24 @@
 const nodemailer = require('nodemailer');
 const PROJECTS = require('../models/Project');
+require('dotenv').config();
 
-async function sendNotification(projectId, subject, message) {
+async function sendNotification(projectName, subject, message) {
     try {
-        const project = await PROJECTS.findById(projectId);
-        if (!project) {
+        if (!message || !subject) {
+            console.log(`Your request is missing a subject or message.`);
             return;
         }
 
         // Check if SMTP is configured
-        if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.UPDATE_EMAIL || !process.env.UPDATE_EMAIL) {
-            console.warn('SMTP not configured, notification not sent');
+        if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.UPDATE_EMAIL || !process.env.PERSONAL_EMAIL) {
+            console.warn('[SMTP] SMTP configuration is incomplete. Skipping email notification.');
             return;
         }
 
         const transporter = nodemailer.createTransport({
             host: process.env.SMTP_HOST,
-            port: process.env.SMTP_PORT || 587,
-            secure: process.env.SMTP_SECURE === 'true' || false,
+            port: Number(process.env.SMTP_PORT) || 465,
+            secure: true,
             auth: {
                 user: process.env.SMTP_USER,
                 pass: process.env.SMTP_PASS
@@ -26,14 +27,15 @@ async function sendNotification(projectId, subject, message) {
 
         const mailOptions = {
             from: process.env.UPDATE_EMAIL,
-            to: process.env.UPDATE_EMAIL,
+            to: process.env.PERSONAL_EMAIL,
             subject: subject,
             text: message
         };
 
         await transporter.sendMail(mailOptions);
+        console.log(`Notification email sent for project ${projectName}: ${subject}`);
     } catch (err) {
-        console.error(`Failed to send notification email:`, err.message);
+         console.error(`Failed to send notification email:`, err);
     }
 }
 

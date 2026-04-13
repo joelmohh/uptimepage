@@ -5,10 +5,6 @@ const ProjectsSchema = new mongoose.Schema({
         type: String, 
         required: true 
     },
-    description: {
-        type: String,
-        default: ''
-    },
     url: { 
         type: String, 
         required: true 

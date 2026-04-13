@@ -13,22 +13,7 @@ function isValidUrl(url) {
     }
 }
 
-function validateEnv(envVars) {
-    const missing = [];
-    
-    envVars.forEach(envVar => {
-        if (!process.env[envVar]) {
-            missing.push(envVar);
-        }
-    });
-
-    if (missing.length > 0) {
-        throw new Error(`Missing environment variables: ${missing.join(', ')}`);
-    }
-}
-
 module.exports = {
     isValidObjectId,
-    isValidUrl,
-    validateEnv
+    isValidUrl
 };
